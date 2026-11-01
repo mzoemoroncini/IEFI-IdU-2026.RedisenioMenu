@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private SaleSummary? summary;
     private SavedClose? selectedClose;
     private DateTime? checkedDate;
+    private DateTime? justSavedDate;
     private bool dateStorageFailed;
     private readonly CloseHistory history;
     private readonly ObservableCollection<HistoryRow> savedCloses = new();
@@ -128,7 +129,9 @@ public partial class MainWindow : Window
             TaxValue.Text = Sales.Money(summary.Tax);
             UnitsValue.Text = summary.Units.ToString("N0", Sales.Argentina);
             SetStatus(dateStorageFailed ? "No se pudo comprobar si este día ya está registrado. Volvé a elegir la fecha para reintentar."
-                : selectedClose is not null ? "Este día ya está registrado. Podés verlo en Historial o editar su registro."
+                : selectedClose is not null ? (justSavedDate == selectedClose.Summary.Date
+                    ? $"Ventas del {selectedClose.Summary.Date:dd/MM/yyyy} guardadas correctamente. Se limpiaron las cantidades y los totales. Elegí otra fecha para una nueva carga."
+                    : "Este día ya está registrado. Podés verlo en Historial o editar su registro.")
                 : summary.Units > 0 ? "Totales actualizados automáticamente. Hay cambios sin guardar."
                 : "Los totales se actualizan al cargar cantidades. También podés guardar un día sin ventas.");
         }
@@ -180,6 +183,7 @@ public partial class MainWindow : Window
             }
             validated = false;
             summary = null;
+            justSavedDate = completed.Saved.Summary.Date;
             selectedClose = completed.Saved;
             checkedDate = completed.Saved.Summary.Date;
             dateStorageFailed = false;
@@ -216,6 +220,7 @@ public partial class MainWindow : Window
             catch (Exception error) when (IsStorageError(error))
             { selectedClose = null; dateStorageFailed = true; }
         }
+        if (!TryDate(out var selectedDate) || selectedDate.Date != justSavedDate) justSavedDate = null;
         RegisteredDayPanel.Visibility = selectedClose is null ? Visibility.Collapsed : Visibility.Visible;
         RegisteredDayText.Text = selectedClose is null ? "" : $"El {selectedClose.Summary.Date:dd/MM/yyyy} ya tiene un cierre guardado por {Sales.Money(selectedClose.Summary.Total)}.";
         RowsControl.IsEnabled = selectedClose is null;
@@ -233,6 +238,7 @@ public partial class MainWindow : Window
     {
         if (selectedClose is not { } saved) return;
         if (new HistoryEditWindow(history, saved) { Owner = this }.ShowDialog() != true) return;
+        justSavedDate = null;
         checkedDate = null;
         RefreshState();
         SetStatus("Se actualizaron las ventas del día. Podés consultarlas en Historial.");
