@@ -18,11 +18,10 @@ internal static class Program
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("es-AR");
         var directory = Path.Combine(Path.GetTempPath(), "MesaUI-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         try
         {
-            app.InitializeComponent();
-            app.StartupUri = null;
+            app.Resources = (ResourceDictionary)Application.LoadComponent(new Uri("/Mesa;component/Themes/Mesa.xaml", UriKind.Relative));
             var path = Path.Combine(directory, "cierres.db");
             var window = new MainWindow(path);
             window.Show(); Pump();

@@ -26,7 +26,7 @@ jobs:
         timeout-minutes: 3
         run: dotnet run --project tests/Mesa.UiChecks -c Release
       - name: Publicar aplicación con runtime incluido
-        run: dotnet publish src/Mesa.Desktop -c Release -r win-x64 --self-contained true -o artifacts/Mesa --nologo
+        run: dotnet publish src/Mesa.Desktop/Mesa.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/Mesa --nologo
       - name: Incluir instrucciones
         shell: pwsh
         run: |
