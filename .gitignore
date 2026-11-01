@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/*_wpftmp.csproj
+.vs/
+.vscode/
+*.user
+*.suo
+*.pdb
+Publicado/
+artifacts/
+*.zip
