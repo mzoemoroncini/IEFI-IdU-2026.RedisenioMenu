@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Compilar solución
         run: dotnet build Mesa.sln -c Release --nologo
-      - name: Verificar cálculos, historial SQLite y reglas de impresión
+      - name: Verificar cálculos, menú editable e historial SQLite
         run: dotnet run --project tests/Mesa.Checks -c Release --no-build
       - name: Publicar aplicación con runtime incluido
         run: dotnet publish src/Mesa.Desktop -c Release -r win-x64 --self-contained true -o artifacts/Mesa --nologo

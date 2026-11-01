@@ -94,51 +94,7 @@ public sealed class CloseHistory(string databasePath)
         left is not null && right is not null && left.Date.Date == right.Date.Date
         && left.TaxRate == right.TaxRate && left.Lines.SequenceEqual(right.Lines);
 
-    private SqliteConnection Open()
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(DatabasePath)!);
-        var connection = new SqliteConnection(new SqliteConnectionStringBuilder
-        {
-            DataSource = DatabasePath, ForeignKeys = true, DefaultTimeout = 5, Pooling = false
-        }.ToString());
-        try
-        {
-            connection.Open();
-            using var versionCommand = connection.CreateCommand();
-            versionCommand.CommandText = "PRAGMA user_version";
-            var version = (long)versionCommand.ExecuteScalar()!;
-            if (version > 1) throw new InvalidDataException("Esta base de datos requiere una versión más nueva de Mesa.");
-            if (version == 0)
-            {
-                using var transaction = connection.BeginTransaction();
-                using var schema = connection.CreateCommand();
-                schema.Transaction = transaction;
-                schema.CommandText = """
-                    CREATE TABLE IF NOT EXISTS DailyCloses (
-                        CloseDate TEXT PRIMARY KEY NOT NULL,
-                        SavedAt TEXT NOT NULL,
-                        TotalCents INTEGER NOT NULL CHECK (TotalCents >= 0),
-                        TaxCents INTEGER NOT NULL CHECK (TaxCents >= 0),
-                        Units INTEGER NOT NULL CHECK (Units >= 0),
-                        TaxRate TEXT NOT NULL
-                    );
-                    CREATE TABLE IF NOT EXISTS CloseLines (
-                        CloseDate TEXT NOT NULL REFERENCES DailyCloses(CloseDate) ON DELETE CASCADE,
-                        Position INTEGER NOT NULL CHECK (Position >= 0),
-                        ProductName TEXT NOT NULL,
-                        PriceCents INTEGER NOT NULL CHECK (PriceCents >= 0),
-                        Quantity INTEGER NOT NULL CHECK (Quantity BETWEEN 0 AND 999999),
-                        PRIMARY KEY (CloseDate, Position)
-                    );
-                    PRAGMA user_version = 1;
-                    """;
-                schema.ExecuteNonQuery();
-                transaction.Commit();
-            }
-            return connection;
-        }
-        catch { connection.Dispose(); throw; }
-    }
+    private SqliteConnection Open() => MesaDatabase.Open(DatabasePath);
 
     private static IReadOnlyList<SavedClose> Read(SqliteConnection connection, SqliteTransaction transaction, string? dateKey)
     {

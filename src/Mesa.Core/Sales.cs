@@ -18,13 +18,14 @@ public static class Sales
 {
     public const int MaximumQuantity = 999999;
     public static readonly CultureInfo Argentina = CultureInfo.GetCultureInfo("es-AR");
-    public static IReadOnlyList<Product> Menu { get; } = Array.AsReadOnly(new[]
+    public static IReadOnlyList<Product> DefaultMenu { get; } = Array.AsReadOnly(new[]
     {
         new Product("Hamburguesa", 6500m), new Product("Cerveza", 3500m),
         new Product("Gaseosa", 2500m), new Product("Ensalada", 5000m),
         new Product("Pancho", 3000m), new Product("Agua saborizada", 2200m),
         new Product("Sopa", 3800m), new Product("Postre", 3200m)
     });
+    public static IReadOnlyList<Product> Menu => DefaultMenu;
     public static string Money(decimal amount) => amount.ToString("C2", Argentina);
 
     // Sin decimales, signos, notación científica ni separadores de miles.
@@ -36,11 +37,13 @@ public static class Sales
             && quantity <= MaximumQuantity;
     }
 
-    public static SaleSummary Calculate(DateTime date, IReadOnlyList<string> quantities)
+    public static SaleSummary Calculate(DateTime date, IReadOnlyList<string> quantities) => Calculate(date, DefaultMenu, quantities);
+
+    public static SaleSummary Calculate(DateTime date, IReadOnlyList<Product> products, IReadOnlyList<string> quantities)
     {
-        if (quantities.Count != Menu.Count)
+        if (products.Count is < 1 or > MenuCatalog.MaximumProducts || quantities.Count != products.Count)
             throw new ArgumentException("Se requiere una cantidad por producto.");
-        var lines = Menu.Select((product, index) =>
+        var lines = products.Select((product, index) =>
         {
             if (!TryQuantity(quantities[index], out var quantity))
                 throw new ArgumentException($"Revisá la cantidad de {product.Name}.");

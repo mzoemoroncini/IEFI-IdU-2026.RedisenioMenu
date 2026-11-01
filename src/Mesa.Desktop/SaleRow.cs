@@ -4,12 +4,13 @@ using Mesa.Core;
 
 namespace Mesa.Desktop;
 
-public sealed class SaleRow(Product product) : INotifyPropertyChanged
+public sealed class SaleRow(Product product, long menuId = 0) : INotifyPropertyChanged
 {
     private string quantity = "0";
     private string error = "";
     private string amount = Sales.Money(0);
     public Product Product { get; } = product;
+    public long MenuId { get; } = menuId;
     public string Name => Product.Name;
     public string Price => Sales.Money(Product.Price);
     public string Quantity

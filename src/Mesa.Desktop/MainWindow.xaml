@@ -28,7 +28,7 @@
       <Border Style="{StaticResource Panel}">
         <Grid>
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <Grid Margin="20,18"><TextBlock Text="Productos vendidos" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="8 productos" HorizontalAlignment="Right" Foreground="{StaticResource Muted}" FontSize="12"/></Grid>
+          <Grid Margin="20,18"><TextBlock Text="Productos vendidos" FontSize="16" FontWeight="SemiBold"/><TextBlock x:Name="ProductsCount" Text="0 productos" HorizontalAlignment="Right" Foreground="{StaticResource Muted}" FontSize="12"/></Grid>
           <Border Grid.Row="1" Background="{StaticResource Soft}" BorderBrush="{StaticResource Line}" BorderThickness="0,1">
             <Grid Margin="18,10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/><ColumnDefinition Width="150"/><ColumnDefinition Width="118"/></Grid.ColumnDefinitions>
               <TextBlock Text="Producto" Foreground="{StaticResource Muted}" FontSize="12"/>
@@ -60,7 +60,7 @@
               </DataTemplate></ItemsControl.ItemTemplate>
             </ItemsControl>
           </ScrollViewer>
-          <TextBlock Grid.Row="3" Text="Tab / Shift+Tab: navegar  ·  Enter: calcular" Margin="20,13" FontSize="12" Foreground="{StaticResource Muted}"/>
+          <TextBlock Grid.Row="3" x:Name="QuantityHelp" Text="Tab / Enter: siguiente cantidad  ·  Totales automáticos" Margin="20,13" FontSize="12" Foreground="{StaticResource Muted}"/>
         </Grid>
       </Border>
       <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
@@ -74,12 +74,11 @@
             </Border>
             <Grid Margin="0,20"><TextBlock Text="Unidades vendidas" FontSize="13"/><TextBlock x:Name="UnitsValue" Text="0" HorizontalAlignment="Right" FontWeight="SemiBold"/></Grid>
             <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,16,0,16">
-              <TextBlock x:Name="StatusText" Text="Ingresá las cantidades vendidas para calcular." Foreground="{StaticResource Muted}" FontSize="13" MinHeight="42" AutomationProperties.LiveSetting="Polite"/>
+              <TextBlock x:Name="StatusText" Text="Los totales se actualizan mientras cargás las cantidades." Foreground="{StaticResource Muted}" FontSize="13" MinHeight="42" AutomationProperties.LiveSetting="Polite"/>
             </Border>
-            <Button x:Name="CalculateButton" Content="_Calcular ventas" Style="{StaticResource PrimaryButton}" Click="Calculate_Click"/>
-            <Button x:Name="SaveButton" Content="_Guardar cierre" Margin="0,10,0,0" Click="Save_Click" IsEnabled="False" ToolTip="Calculá las ventas antes de guardar el cierre."/>
+            <Button x:Name="SaveButton" Content="_Guardar cierre" Style="{StaticResource PrimaryButton}" Click="Save_Click" IsEnabled="False" ToolTip="Guardá el cierre cuando termines de cargar las cantidades."/>
             <Button x:Name="ClearButton" Content="_Limpiar cantidades" Margin="0,10,0,0" Click="Clear_Click" IsEnabled="False"/>
-            <Button x:Name="PrintButton" Content="_Imprimir resumen" Margin="0,10,0,0" Click="Print_Click" IsEnabled="False" ToolTip="Calculá ventas válidas y actualizadas para imprimir."/>
+            <Button x:Name="PrintButton" Content="_Imprimir resumen" Margin="0,10,0,0" Click="Print_Click" IsEnabled="False" ToolTip="Disponible cuando hay ventas registradas y las cantidades son válidas."/>
             <TextBlock Text="Ctrl+P: vista previa de impresión" Margin="0,14,0,0" FontSize="11" Foreground="{StaticResource Muted}"/>
           </StackPanel>
         </Border>
@@ -106,10 +105,28 @@
                 <DataGridTextColumn Header="Guardado el" Binding="{Binding SavedAt}" Width="*"/>
               </DataGrid.Columns>
             </DataGrid>
-            <TextBlock x:Name="EmptyHistory" Text="Todavía no hay cierres guardados.&#10;Calculá las ventas y elegí Guardar cierre para empezar." TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="25" IsHitTestVisible="False"/>
+            <TextBlock x:Name="EmptyHistory" Text="Todavía no hay cierres guardados.&#10;Cargá las cantidades y elegí Guardar cierre para empezar." TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="25" IsHitTestVisible="False"/>
           </Grid>
         </Border>
         <Grid Grid.Row="3" Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Los cierres se conservan en esta computadora, aunque cierres la aplicación." Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"/><StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="HistoryDetailButton" Content="Ver _detalle" IsEnabled="False" Click="HistoryDetail_Click"/><Button x:Name="HistoryPrintButton" Content="_Imprimir" IsEnabled="False" Click="HistoryPrint_Click" Margin="12,0,0,0"/></StackPanel></Grid>
+      </Grid>
+    </TabItem>
+    <TabItem Header="_Menú">
+      <Grid Margin="0,24,0,14">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid Margin="0,0,0,20"><StackPanel Margin="0,0,290,0"><TextBlock Text="Menú de productos" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="Administrá los productos y precios que usás en los próximos cierres." Margin="0,7,0,0" Foreground="{StaticResource Muted}"/></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"><Button Content="Actualizar" Click="MenuRefresh_Click"/><Button x:Name="AddProductButton" Content="_Agregar producto" Click="AddProduct_Click" Style="{StaticResource PrimaryButton}" Margin="12,0,0,0"/></StackPanel></Grid>
+        <TextBlock Grid.Row="1" x:Name="MenuStatus" Foreground="{StaticResource Muted}" Margin="0,0,0,14" AutomationProperties.LiveSetting="Polite"/>
+        <Border Grid.Row="2" Style="{StaticResource Panel}">
+          <Grid>
+            <DataGrid x:Name="MenuGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column" BorderThickness="0" Background="White" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{StaticResource Line}" RowHeaderWidth="0" RowHeight="50" ColumnHeaderHeight="42" SelectionChanged="Menu_SelectionChanged" MouseDoubleClick="Menu_DoubleClick" PreviewKeyDown="Menu_KeyDown" AutomationProperties.Name="Productos del menú actual">
+              <DataGrid.ColumnHeaderStyle><Style TargetType="DataGridColumnHeader"><Setter Property="Background" Value="{StaticResource Soft}"/><Setter Property="Foreground" Value="{StaticResource Muted}"/><Setter Property="Padding" Value="14,10"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="BorderThickness" Value="0"/></Style></DataGrid.ColumnHeaderStyle>
+              <DataGrid.CellStyle><Style TargetType="DataGridCell"><Setter Property="Padding" Value="14,12"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DataGridCell"><Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter VerticalAlignment="Center"/></Border></ControlTemplate></Setter.Value></Setter></Style></DataGrid.CellStyle>
+              <DataGrid.Columns><DataGridTextColumn Header="Producto" Binding="{Binding Name}" Width="2*"/><DataGridTextColumn Header="Precio unitario" Binding="{Binding FormattedPrice}" Width="*"/></DataGrid.Columns>
+            </DataGrid>
+            <TextBlock x:Name="EmptyMenu" Text="No hay productos en el menú.&#10;Elegí Agregar producto para empezar." TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="25" IsHitTestVisible="False"/>
+          </Grid>
+        </Border>
+        <Grid Grid.Row="3" Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Los cambios actualizan automáticamente el cierre en pantalla. El historial conserva sus productos y precios originales." Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"/><StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="EditProductButton" Content="_Editar producto" IsEnabled="False" Click="EditProduct_Click"/><Button x:Name="RemoveProductButton" Content="_Quitar del menú" IsEnabled="False" Click="RemoveProduct_Click" Margin="12,0,0,0"/></StackPanel></Grid>
       </Grid>
     </TabItem>
   </TabControl>

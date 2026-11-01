@@ -16,16 +16,31 @@ La versión incluida es para Windows 10/11 de 64 bits (x64). Incluye el runtime:
 
 1. Elegir la fecha del cierre; se inicia con la fecha de la computadora.
 2. Ingresar cantidades enteras entre 0 y 999.999. También se pueden usar + y −, o las flechas arriba/abajo cuando se edita una cantidad.
-3. Presionar **Calcular ventas** o Enter desde un campo.
-4. Revisar importes, ventas totales, impuesto del 18 % y unidades.
+3. Los importes, el total de ventas, el impuesto del 18 % y las unidades se actualizan automáticamente mientras se cargan las cantidades.
+4. Revisar los resultados; no hay que presionar un botón de cálculo.
 5. **Imprimir resumen** abre una vista previa. Su botón **Imprimir** abre el diálogo de Windows; allí se puede elegir una impresora o **Microsoft Print to PDF**.
 6. **Guardar cierre** conserva el cálculo en la base de datos local. Si ya hay un cierre de esa fecha, solicita confirmación antes de reemplazarlo.
 7. En **Historial**, seleccionar un día para **Ver detalle** o **Imprimir**. También se puede abrir el detalle con doble clic o Enter.
 8. **Limpiar cantidades** solicita confirmación y vuelve a cero. Conserva la fecha elegida y los cierres del historial.
 
-Tab y Shift+Tab recorren los campos y acciones. Ctrl+P abre la vista previa si el cálculo está actualizado. En la confirmación, Conservar recibe el foco; Esc cancela y Enter activa el botón enfocado.
+Tab y Shift+Tab recorren los campos y acciones. Enter desde una cantidad avanza al siguiente campo. Ctrl+P abre la vista previa si hay ventas y los datos son válidos. En la confirmación, Conservar recibe el foco; Esc cancela y Enter activa el botón enfocado.
 
-Los resultados se actualizan al calcular. Una edición posterior marca el resumen como **Último cálculo** y bloquea el guardado y la impresión hasta recalcular. Los importes modificados aparecen como **Pendiente**. Las cantidades inválidas muestran su mensaje junto al campo y no producen un cálculo parcial.
+Los resultados se actualizan automáticamente al cambiar cantidades, productos o precios. Las cantidades inválidas muestran su mensaje junto al campo, ocultan el total e impiden guardar e imprimir hasta corregirlas. **Guardar cierre** registra el resultado cuando el usuario lo decide; escribir cantidades o cambiar el menú no modifica por sí solo el historial.
+
+## Administrar el menú
+
+La pestaña **Menú** permite agregar productos, editar nombres y precios y quitar productos con confirmación.
+
+- **Agregar producto** abre el formulario de nombre y precio.
+- **Editar producto** modifica el seleccionado. También se puede abrir con doble clic o Enter.
+- **Quitar del menú** pide confirmación y elimina el producto del menú actual. Sus registros en el historial permanecen intactos.
+- Los precios se escriben sin separadores de miles, con coma decimal si corresponde: `6500` o `6500,50`. Se permiten dos decimales y también productos sin cargo.
+- Los nombres repetidos se rechazan, incluso con diferencias de mayúsculas, tildes o espacios.
+- Los cambios se guardan en SQLite y permanecen al reiniciar la aplicación.
+- Si hay un cierre en carga, se conservan las cantidades de los productos que sigan presentes, usando su identidad. Los productos nuevos empiezan en cero. Los totales se recalculan automáticamente con el menú actualizado. Antes de quitar un producto con una cantidad cargada se informa que esa cantidad también se quitará de la pantalla.
+- El menú admite hasta 100 productos. Si queda vacío, se puede seguir consultando el historial; hay que agregar al menos un producto para cargar otro cierre.
+
+El menú comienza con ocho productos de ejemplo solo cuando se crea o se actualiza por primera vez la base. Los productos borrados no reaparecen al reiniciar.
 
 ## Base de datos e historial
 
@@ -38,9 +53,10 @@ Mesa utiliza **SQLite**, mediante Microsoft.Data.Sqlite. La base se crea automá
 No necesita un servidor, contraseñas ni Internet. El historial pertenece al usuario de Windows y permanece aunque se actualice o se mueva el ejecutable.
 
 - Cada fecha tiene un único cierre; reemplazarlo requiere confirmación.
+- La actualización a esta versión agrega la tabla del menú sin borrar ni alterar los cierres guardados en la versión anterior.
 - Se conservan productos, precios, cantidades y tasa del momento del guardado. Un cambio futuro del menú no modifica esos registros.
 - El historial se ordena del día más reciente al más antiguo. Los detalles son de solo lectura y se pueden imprimir nuevamente.
-- Un día sin ventas también se puede guardar después de calcular sus cantidades en cero.
+- Un día sin ventas también se puede guardar con sus cantidades en cero.
 - El guardado de la cabecera y los productos es una única transacción. Si falla, no queda un cierre parcial; si era un reemplazo, se conserva el anterior.
 - No se eliminan registros al usar Limpiar cantidades. Al salir, la aplicación avisa si hay cantidades que todavía no se guardaron.
 
@@ -59,7 +75,7 @@ dotnet run --project src/Mesa.Desktop
 El código fuente se organiza así:
 
 - `src/Mesa.Desktop`: ventanas WPF, comportamiento y vista previa de impresión.
-- `src/Mesa.Core`: productos, validación, cálculos con decimal, comparación con el último cálculo y acceso a SQLite mediante consultas parametrizadas.
+- `src/Mesa.Core`: catálogo editable, validación, cálculos con decimal, comparación con la copia guardada, actualización del esquema SQLite e historial mediante consultas parametrizadas. Los detalles históricos no tienen dependencia del menú actual.
 - `tests/Mesa.Checks`: verificaciones ejecutables de cálculos, estados e historial con una base SQLite temporal real.
 
 Para verificar la lógica:
@@ -76,19 +92,21 @@ dotnet publish src/Mesa.Desktop -c Release -r win-x64 --self-contained true -o P
 
 ## Ejemplo para demostrar en clase
 
-Ingresar, en orden: **14, 22, 18, 6, 8, 11, 4, 12**.
+Con el menú inicial de ejemplo, ingresar, en orden: **14, 22, 18, 6, 8, 11, 4, 12**.
 
 Resultado esperado: **$ 344.800,00** en ventas, **$ 62.064,00** de impuesto y **95** unidades.
 
-Después, cambiar hamburguesas a 16: la impresión debe quedar deshabilitada hasta recalcular. El nuevo resultado es **$ 357.800,00**, **$ 64.404,00** de impuesto y **97** unidades. Probar −3 y 4,5 para mostrar las validaciones. Guardar el cierre, abrir Historial y consultar el detalle. Cerrar y volver a abrir Mesa para comprobar la persistencia. Guardar otra vez la misma fecha para probar Conservar y Sí, reemplazar. Finalmente, probar Conservar y Sí, limpiar: el historial debe permanecer intacto.
+Después, cambiar hamburguesas a 16: los resultados se actualizan inmediatamente, sin botón de cálculo. El nuevo resultado es **$ 357.800,00**, **$ 64.404,00** de impuesto y **97** unidades. Probar −3 y 4,5 para mostrar las validaciones. Guardar el cierre, abrir Historial y consultar el detalle. Cerrar y volver a abrir Mesa para comprobar la persistencia. Guardar otra vez la misma fecha para probar Conservar y Sí, reemplazar. Finalmente, probar Conservar y Sí, limpiar: el historial debe permanecer intacto.
+
+Para demostrar la conservación histórica, guardar ese cierre y luego ir a Menú. Cambiar el nombre o precio de Hamburguesa, o quitarla. Volver a Historial y abrir el día guardado: seguirá mostrando Hamburguesa a $6.500,00 con sus cantidades e importes originales. No hace falta volver a guardar ese cierre para consultar sus datos.
 
 ## Decisiones de rediseño
 
-La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto. El panel lateral separa los resultados de las entradas. El botón terracota identifica la acción principal. Se agregaron navegación por teclado, mensajes por campo, confirmación de limpieza, guardado, historial por día y vista previa de impresión. Las pestañas separan la tarea de carga de la consulta de cierres anteriores. Los estados mantienen la misma distribución. La ventana utiliza controles de escritorio y la barra nativa de Windows.
+La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto. El panel lateral separa los resultados de las entradas. El botón terracota identifica Guardar cierre, la acción principal. El cálculo automático elimina una acción manual y da respuesta inmediata a cada cambio de cantidad. Se agregaron navegación por teclado, mensajes por campo, confirmación de limpieza, guardado, historial por día y vista previa de impresión. Las pestañas separan la carga del cierre, la consulta del historial y la administración del menú. Los estados mantienen la misma distribución. La ventana utiliza controles de escritorio y la barra nativa de Windows.
 
 ## Validación de esta entrega
 
 - Solución compilada en Release sin advertencias ni errores.
 - Publicación autocontenida para Windows x64; ejecutable PE de interfaz gráfica.
-- 53 verificaciones correctas: cálculos, validaciones, guardado y recuperación desde SQLite, fechas únicas, reemplazo, precios históricos, protección frente a bases dañadas y reversión completa ante fallos de transacción.
+- 88 verificaciones correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
 - La interfaz se compiló, pero no se pudo ejecutar visualmente desde el entorno Linux de preparación. Queda por comprobar en Windows el aspecto de las ventanas, el recorrido de teclado y la impresión. Usar el ejemplo anterior para esa primera prueba.

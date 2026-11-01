@@ -2,6 +2,12 @@ namespace Mesa.Core;
 
 public static class SnapshotState
 {
+    public static bool IsCurrent(SaleSummary? summary, DateTime date, IReadOnlyList<Product> products, IReadOnlyList<string> quantities) =>
+        IsCurrent(summary, date, quantities) && summary!.Lines.Select(line => line.Product).SequenceEqual(products);
+
+    public static bool CanPrint(SaleSummary? summary, DateTime date, IReadOnlyList<Product> products, IReadOnlyList<string> quantities) =>
+        summary is { Units: > 0 } && IsCurrent(summary, date, products, quantities);
+
     public static bool IsCurrent(SaleSummary? summary, DateTime date, IReadOnlyList<string> quantities)
     {
         if (summary is null || summary.Date != date.Date || summary.Lines.Count != quantities.Count) return false;
