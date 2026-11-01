@@ -22,6 +22,9 @@ jobs:
         run: dotnet build Mesa.sln -c Release --nologo
       - name: Verificar cálculos, menú editable e historial SQLite
         run: dotnet run --project tests/Mesa.Checks -c Release --no-build
+      - name: Verificar guardado, limpieza y calendario en Windows
+        timeout-minutes: 3
+        run: dotnet run --project tests/Mesa.UiChecks -c Release
       - name: Publicar aplicación con runtime incluido
         run: dotnet publish src/Mesa.Desktop -c Release -r win-x64 --self-contained true -o artifacts/Mesa --nologo
       - name: Incluir instrucciones

@@ -1,5 +1,7 @@
 <Application x:Class="Mesa.Desktop.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" StartupUri="MainWindow.xaml">
   <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Themes/Calendar.xaml"/></ResourceDictionary.MergedDictionaries>
     <SolidColorBrush x:Key="Accent" Color="#A64025" />
     <SolidColorBrush x:Key="Ink" Color="#2D2926" />
     <SolidColorBrush x:Key="Muted" Color="#70665E" />
@@ -29,5 +31,6 @@
       <Style.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#A64025"/><Setter Property="BorderThickness" Value="2"/></Trigger></Style.Triggers>
     </Style>
     <Style x:Key="Panel" TargetType="Border"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/></Style>
+    </ResourceDictionary>
   </Application.Resources>
 </Application>

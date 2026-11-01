@@ -18,15 +18,20 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<SaleRow> rows = new();
     private SaleSummary? summary;
-    private SaleSummary? lastSaved;
-    private readonly CloseHistory history = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Mesa", "cierres.db"));
+    private SavedClose? selectedClose;
+    private DateTime? checkedDate;
+    private bool dateStorageFailed;
+    private readonly CloseHistory history;
     private readonly ObservableCollection<HistoryRow> savedCloses = new();
     private bool loading = true;
     private bool dateInvalid;
     private bool validated;
 
-    public MainWindow()
+    public MainWindow() : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Mesa", "cierres.db")) { }
+
+    public MainWindow(string databasePath)
     {
+        history = new CloseHistory(databasePath);
         InitializeComponent();
         RowsControl.DataContext = rows;
         HistoryGrid.ItemsSource = savedCloses;
@@ -59,6 +64,7 @@ public partial class MainWindow : Window
     private void Date_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (loading) return;
+        checkedDate = null;
         dateInvalid = !DateTime.TryParse(DateText(), Sales.Argentina, DateTimeStyles.AllowWhiteSpaces, out _);
         RefreshState();
     }
@@ -81,6 +87,7 @@ public partial class MainWindow : Window
     private void RefreshState()
     {
         if (loading) return;
+        RefreshRegisteredDay();
         var canCalculate = menuAvailable && rows.Count > 0;
         if (!canCalculate)
         {
@@ -106,8 +113,8 @@ public partial class MainWindow : Window
         var goodDate = TryDate(out var date);
         summary = goodDate && valid ? Sales.Calculate(date, Products(), Quantities()) : null;
         ClearButton.IsEnabled = HasInput;
-        PrintButton.IsEnabled = summary is { Units: > 0 };
-        SaveButton.IsEnabled = summary is not null && !CloseHistory.SameValues(summary, lastSaved);
+        PrintButton.IsEnabled = selectedClose is null && summary is { Units: > 0 };
+        SaveButton.IsEnabled = summary is not null && selectedClose is null && !dateStorageFailed;
         SummaryCaption.Text = "Total de ventas";
         if (summary is null)
         {
@@ -120,7 +127,8 @@ public partial class MainWindow : Window
             TotalValue.Text = Sales.Money(summary.Total);
             TaxValue.Text = Sales.Money(summary.Tax);
             UnitsValue.Text = summary.Units.ToString("N0", Sales.Argentina);
-            SetStatus(CloseHistory.SameValues(summary, lastSaved) ? "Cierre guardado. Podés consultarlo en Historial."
+            SetStatus(dateStorageFailed ? "No se pudo comprobar si este día ya está registrado. Volvé a elegir la fecha para reintentar."
+                : selectedClose is not null ? "Este día ya está registrado. Podés verlo en Historial o editar su registro."
                 : summary.Units > 0 ? "Totales actualizados automáticamente. Hay cambios sin guardar."
                 : "Los totales se actualizan al cargar cantidades. También podés guardar un día sin ventas.");
         }
@@ -143,7 +151,6 @@ public partial class MainWindow : Window
         loading = true;
         foreach (var row in rows) row.Quantity = "0";
         summary = null;
-        lastSaved = null;
         validated = false;
         loading = false;
         RefreshState();
@@ -164,22 +171,71 @@ public partial class MainWindow : Window
         if (!SaveButton.IsEnabled || summary is null) return;
         try
         {
-            try { history.Save(summary); }
-            catch (CloseAlreadyExistsException)
+            var completed = DailyCloseWorkflow.SaveAndClear(history, summary);
+            loading = true;
+            for (int i = 0; i < rows.Count; i++)
             {
-                var previous = history.Find(summary.Date)!;
-                var message = $"Ya hay un cierre guardado para el {summary.Date:dd/MM/yyyy} por {Sales.Money(previous.Summary.Total)}. Se reemplazará por el cierre actual de {Sales.Money(summary.Total)}.";
-                if (new ConfirmWindow("¿Querés reemplazar el cierre de este día?", message, "Sí, reemplazar") { Owner = this }.ShowDialog() != true) return;
-                history.Save(summary, replace: true);
+                rows[i].Quantity = completed.EmptyDraft.Lines[i].Quantity.ToString(CultureInfo.InvariantCulture);
+                rows[i].Error = "";
             }
-            lastSaved = summary;
+            validated = false;
+            summary = null;
+            selectedClose = completed.Saved;
+            checkedDate = completed.Saved.Summary.Date;
+            dateStorageFailed = false;
+            loading = false;
             RefreshState();
+            SetStatus($"Ventas del {completed.Saved.Summary.Date:dd/MM/yyyy} guardadas correctamente. Se limpiaron las cantidades y los totales. Elegí otra fecha para una nueva carga.");
+            ClosingDate.Focus();
+        }
+        catch (CloseAlreadyExistsException)
+        {
+            checkedDate = null;
+            RefreshState();
+            SetStatus("Este día ya está registrado. La carga sigue en pantalla; revisá el historial antes de editar el registro.");
         }
         catch (Exception error) when (IsStorageError(error))
         {
             SetStatus("No se pudo guardar el cierre. Las cantidades siguen en pantalla.", true);
             ShowStorageError(error);
         }
+    }
+
+    private void RefreshRegisteredDay()
+    {
+        if (!TryDate(out var date))
+        {
+            selectedClose = null;
+            checkedDate = null;
+            dateStorageFailed = false;
+        }
+        else if (checkedDate != date.Date)
+        {
+            checkedDate = date.Date;
+            try { selectedClose = history.Find(date); dateStorageFailed = false; }
+            catch (Exception error) when (IsStorageError(error))
+            { selectedClose = null; dateStorageFailed = true; }
+        }
+        RegisteredDayPanel.Visibility = selectedClose is null ? Visibility.Collapsed : Visibility.Visible;
+        RegisteredDayText.Text = selectedClose is null ? "" : $"El {selectedClose.Summary.Date:dd/MM/yyyy} ya tiene un cierre guardado por {Sales.Money(selectedClose.Summary.Total)}.";
+        RowsControl.IsEnabled = selectedClose is null;
+    }
+
+    private void ViewRegisteredDay_Click(object sender, RoutedEventArgs e)
+    {
+        if (selectedClose is not { } saved) return;
+        MainTabs.SelectedIndex = 1;
+        HistoryGrid.SelectedItem = savedCloses.FirstOrDefault(row => row.Close.Summary.Date == saved.Summary.Date);
+        if (HistoryGrid.SelectedItem is not null) HistoryGrid.ScrollIntoView(HistoryGrid.SelectedItem);
+    }
+
+    private void EditRegisteredDay_Click(object sender, RoutedEventArgs e)
+    {
+        if (selectedClose is not { } saved) return;
+        if (new HistoryEditWindow(history, saved) { Owner = this }.ShowDialog() != true) return;
+        checkedDate = null;
+        RefreshState();
+        SetStatus("Se actualizaron las ventas del día. Podés consultarlas en Historial.");
     }
 
     private static bool IsStorageError(Exception error) => error is IOException or InvalidDataException or UnauthorizedAccessException or SqliteException or FormatException or OverflowException;
@@ -193,7 +249,7 @@ public partial class MainWindow : Window
     {
         if (loading || e.Source != MainTabs) return;
         if (MainTabs.SelectedIndex == 1) LoadHistory();
-        else LoadMenu();
+        else { checkedDate = null; LoadMenu(); }
     }
     private void RefreshHistory_Click(object sender, RoutedEventArgs e) => LoadHistory();
     private void LoadHistory()
@@ -245,6 +301,7 @@ public partial class MainWindow : Window
 
     private void Date_Changed(object sender, SelectionChangedEventArgs e)
     {
+        checkedDate = null;
         dateInvalid = ClosingDate.SelectedDate is null;
         // DatePicker actualiza Text después del evento SelectedDateChanged.
         if (!loading) Dispatcher.BeginInvoke(new Action(RefreshState));
@@ -301,7 +358,7 @@ public partial class MainWindow : Window
     }
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        if (!HasInput || (TryDate(out var date) && SnapshotState.IsCurrent(summary, date, Products(), Quantities()) && CloseHistory.SameValues(summary, lastSaved))) return;
+        if (!HasInput) return;
         e.Cancel = new ConfirmWindow("¿Querés salir sin guardar este cierre?", "Hay cantidades que no guardaste. Podés conservar la pantalla y usar Guardar cierre. Los cierres que ya guardaste siguen en el historial.", "Salir sin guardar") { Owner = this }.ShowDialog() != true;
     }
 }

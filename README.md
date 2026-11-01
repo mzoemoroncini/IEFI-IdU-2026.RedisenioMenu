@@ -19,11 +19,14 @@ La versión incluida es para Windows 10/11 de 64 bits (x64). Incluye el runtime:
 3. Los importes, el total de ventas, el impuesto del 18 % y las unidades se actualizan automáticamente mientras se cargan las cantidades.
 4. Revisar los resultados; no hay que presionar un botón de cálculo.
 5. **Imprimir resumen** abre una vista previa. Su botón **Imprimir** abre el diálogo de Windows; allí se puede elegir una impresora o **Microsoft Print to PDF**.
-6. **Guardar cierre** conserva el cálculo en la base de datos local. Si ya hay un cierre de esa fecha, solicita confirmación antes de reemplazarlo.
-7. En **Historial**, seleccionar un día para **Ver detalle** o **Imprimir**. También se puede abrir el detalle con doble clic o Enter.
-8. **Limpiar cantidades** solicita confirmación y vuelve a cero. Conserva la fecha elegida y los cierres del historial.
+6. **Guardar cierre** conserva el cálculo en la base de datos local y, solo después de confirmar el guardado, limpia todas las cantidades y los totales. La fecha queda seleccionada, marcada como registrada. Para una nueva carga, elegir otra fecha.
+7. Si la fecha ya está guardada, se muestra **Este día ya está registrado** y se bloquea el guardado: **Ver en historial** lleva a ese registro; **Editar registro** abre sus cantidades originales. Al guardar cambios se pide confirmación y se mantiene un solo registro por día. Los productos, precios y tasa históricos se conservan, aunque hayan cambiado o se hayan quitado del menú.
+8. En **Historial**, seleccionar un día para **Ver detalle** o **Imprimir**. También se puede abrir el detalle con doble clic o Enter.
+9. **Limpiar cantidades** solicita confirmación y vuelve a cero. Conserva la fecha elegida y los cierres del historial.
 
 Tab y Shift+Tab recorren los campos y acciones. Enter desde una cantidad avanza al siguiente campo. Ctrl+P abre la vista previa si hay ventas y los datos son válidos. En la confirmación, Conservar recibe el foco; Esc cancela y Enter activa el botón enfocado.
+
+El campo de fecha y el calendario usan el estilo de Mesa: bordes redondeados, selección terracota, foco visible, lunes como primer día de la semana y navegación por meses/años. También se puede escribir la fecha con el teclado.
 
 Los resultados se actualizan automáticamente al cambiar cantidades, productos o precios. Las cantidades inválidas muestran su mensaje junto al campo, ocultan el total e impiden guardar e imprimir hasta corregirlas. **Guardar cierre** registra el resultado cuando el usuario lo decide; escribir cantidades o cambiar el menú no modifica por sí solo el historial.
 
@@ -96,7 +99,7 @@ Con el menú inicial de ejemplo, ingresar, en orden: **14, 22, 18, 6, 8, 11, 4, 
 
 Resultado esperado: **$ 344.800,00** en ventas, **$ 62.064,00** de impuesto y **95** unidades.
 
-Después, cambiar hamburguesas a 16: los resultados se actualizan inmediatamente, sin botón de cálculo. El nuevo resultado es **$ 357.800,00**, **$ 64.404,00** de impuesto y **97** unidades. Probar −3 y 4,5 para mostrar las validaciones. Guardar el cierre, abrir Historial y consultar el detalle. Cerrar y volver a abrir Mesa para comprobar la persistencia. Guardar otra vez la misma fecha para probar Conservar y Sí, reemplazar. Finalmente, probar Conservar y Sí, limpiar: el historial debe permanecer intacto.
+Después, cambiar hamburguesas a 16: los resultados se actualizan inmediatamente, sin botón de cálculo. El nuevo resultado es **$ 357.800,00**, **$ 64.404,00** de impuesto y **97** unidades. Probar −3 y 4,5 para mostrar las validaciones. Guardar el cierre, abrir Historial y consultar el detalle. Cerrar y volver a abrir Mesa para comprobar la persistencia. Comprobar que se limpiaron las cantidades y los totales, y que la misma fecha no permite volver a guardar por accidente. Usar Editar registro para modificar sus cantidades y confirmar Guardar cambios. Elegir otro día para una nueva carga. Finalmente, probar Conservar y Sí, limpiar: el historial debe permanecer intacto.
 
 Para demostrar la conservación histórica, guardar ese cierre y luego ir a Menú. Cambiar el nombre o precio de Hamburguesa, o quitarla. Volver a Historial y abrir el día guardado: seguirá mostrando Hamburguesa a $6.500,00 con sus cantidades e importes originales. No hace falta volver a guardar ese cierre para consultar sus datos.
 
@@ -108,5 +111,6 @@ La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto.
 
 - Solución compilada en Release sin advertencias ni errores.
 - Publicación autocontenida para Windows x64; ejecutable PE de interfaz gráfica.
-- 88 verificaciones correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
-- La interfaz se compiló, pero no se pudo ejecutar visualmente desde el entorno Linux de preparación. Queda por comprobar en Windows el aspecto de las ventanas, el recorrido de teclado y la impresión. Usar el ejemplo anterior para esa primera prueba.
+- 95 verificaciones de lógica correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
+- La integración continua ejecuta 12 verificaciones de interfaz WPF en Windows con una base temporal: guardar y limpiar, conservación del historial, bloqueo de día repetido, cambio de fecha, apertura del calendario, navegación de meses y años, y apertura de edición histórica.
+- El entorno de preparación Linux compila el código; las verificaciones WPF se ejecutan en el runner Windows. El aspecto visual final, el recorrido manual de teclado y la impresión se pueden comprobar con el ejemplo anterior.
