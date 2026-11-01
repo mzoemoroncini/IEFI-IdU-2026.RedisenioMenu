@@ -60,9 +60,10 @@ public partial class PrintPreviewWindow : Window
         foreach (var line in summary.Lines) AddRow([line.Product.Name, Sales.Money(line.Product.Price), line.Quantity.ToString("N0", Sales.Argentina), Sales.Money(line.Amount)]);
         doc.Blocks.Add(table);
         doc.Blocks.Add(new Paragraph(new Run($"Total de ventas: {Sales.Money(summary.Total)}")) { FontSize = 20, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Right, Margin = new Thickness(0,25,0,10) });
-        doc.Blocks.Add(new Paragraph(new Run($"Impuesto · 18 %: {Sales.Money(summary.Tax)}")) { TextAlignment = TextAlignment.Right });
+        var taxLabel = $"{(summary.TaxRate * 100m).ToString("0.##", Sales.Argentina)} %";
+        doc.Blocks.Add(new Paragraph(new Run($"Impuesto · {taxLabel}: {Sales.Money(summary.Tax)}")) { TextAlignment = TextAlignment.Right });
         doc.Blocks.Add(new Paragraph(new Run($"Unidades vendidas: {summary.Units:N0}")) { TextAlignment = TextAlignment.Right });
-        doc.Blocks.Add(new Paragraph(new Run("El impuesto se calcula sobre las ventas y no se suma nuevamente al total.\nMoneda: pesos argentinos · Precios de ejemplo · Impuesto del ejercicio: 18 %")) { FontSize = 10, Foreground = Brushes.DimGray, Margin = new Thickness(0,25,0,0) });
+        doc.Blocks.Add(new Paragraph(new Run($"El impuesto se calcula sobre las ventas y no se suma nuevamente al total.\nMoneda: pesos argentinos · Precios de ejemplo · Impuesto del cierre: {taxLabel}")) { FontSize = 10, Foreground = Brushes.DimGray, Margin = new Thickness(0,25,0,0) });
         return doc;
     }
 }

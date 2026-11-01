@@ -9,3 +9,7 @@
 Publicado/
 artifacts/
 *.zip
+*.db
+*.db-journal
+*.db-shm
+*.db-wal

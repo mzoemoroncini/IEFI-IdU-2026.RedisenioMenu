@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
@@ -9,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Mesa.Core;
+using Microsoft.Data.Sqlite;
 
 namespace Mesa.Desktop;
 
@@ -16,6 +18,9 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<SaleRow> rows = new(Sales.Menu.Select(p => new SaleRow(p)));
     private SaleSummary? summary;
+    private SaleSummary? lastSaved;
+    private readonly CloseHistory history = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Mesa", "cierres.db"));
+    private readonly ObservableCollection<HistoryRow> savedCloses = new();
     private bool loading = true;
     private bool dateInvalid;
     private bool validated;
@@ -24,6 +29,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         RowsControl.DataContext = rows;
+        HistoryGrid.ItemsSource = savedCloses;
         ClosingDate.SelectedDate = DateTime.Today;
         ClosingDate.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(Date_TextChanged));
         foreach (var row in rows) row.PropertyChanged += Row_Changed;
@@ -90,6 +96,7 @@ public partial class MainWindow : Window
         var current = goodDate && valid && SnapshotState.IsCurrent(summary, date, Quantities());
         ClearButton.IsEnabled = HasInput || summary is not null;
         PrintButton.IsEnabled = goodDate && SnapshotState.CanPrint(summary, date, Quantities());
+        SaveButton.IsEnabled = current && !CloseHistory.SameValues(summary, lastSaved);
         SummaryCaption.Text = summary is not null && !current ? "Último cálculo · Total de ventas" : "Total de ventas";
         if (!valid || !goodDate)
         {
@@ -108,7 +115,7 @@ public partial class MainWindow : Window
             TotalValue.Text = Sales.Money(summary.Total);
             TaxValue.Text = Sales.Money(summary.Tax);
             UnitsValue.Text = summary.Units.ToString("N0", Sales.Argentina);
-            SetStatus(current ? (summary.Units > 0 ? "Cálculo actualizado." : "Cálculo actualizado. No hay ventas registradas.")
+            SetStatus(current ? (CloseHistory.SameValues(summary, lastSaved) ? "Cierre guardado. Podés consultarlo en Historial." : summary.Units > 0 ? "Cálculo actualizado. Ya podés guardar el cierre." : "Cálculo actualizado. Podés guardar este día sin ventas.")
                 : "Hay cambios pendientes de calcular. El resumen corresponde al último cálculo.");
         }
     }
@@ -140,10 +147,11 @@ public partial class MainWindow : Window
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
-        if (new ConfirmWindow("¿Querés borrar todas las cantidades?", "Las cantidades y los resultados volverán a cero.", "Sí, limpiar") { Owner = this }.ShowDialog() != true) return;
+        if (new ConfirmWindow("¿Querés borrar todas las cantidades?", "Las cantidades y los resultados volverán a cero. Los cierres guardados se conservan en el historial.", "Sí, limpiar") { Owner = this }.ShowDialog() != true) return;
         loading = true;
         foreach (var row in rows) row.Quantity = "0";
         summary = null;
+        lastSaved = null;
         validated = false;
         loading = false;
         RefreshState();
@@ -156,6 +164,89 @@ public partial class MainWindow : Window
         RefreshState();
         if (PrintButton.IsEnabled && summary is not null)
             new PrintPreviewWindow(summary) { Owner = this }.ShowDialog();
+    }
+
+    private void Save_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshState();
+        if (!SaveButton.IsEnabled || summary is null) return;
+        try
+        {
+            try { history.Save(summary); }
+            catch (CloseAlreadyExistsException)
+            {
+                var previous = history.Find(summary.Date)!;
+                var message = $"Ya hay un cierre guardado para el {summary.Date:dd/MM/yyyy} por {Sales.Money(previous.Summary.Total)}. Se reemplazará por el cierre actual de {Sales.Money(summary.Total)}.";
+                if (new ConfirmWindow("¿Querés reemplazar el cierre de este día?", message, "Sí, reemplazar") { Owner = this }.ShowDialog() != true) return;
+                history.Save(summary, replace: true);
+            }
+            lastSaved = summary;
+            RefreshState();
+        }
+        catch (Exception error) when (IsStorageError(error))
+        {
+            SetStatus("No se pudo guardar el cierre. Las cantidades siguen en pantalla.", true);
+            ShowStorageError(error);
+        }
+    }
+
+    private static bool IsStorageError(Exception error) => error is IOException or InvalidDataException or UnauthorizedAccessException or SqliteException or FormatException or OverflowException;
+    private void ShowStorageError(Exception error)
+    {
+        var detail = error is InvalidDataException ? error.Message
+            : "Revisá que tu usuario pueda escribir en la carpeta de datos y que haya espacio disponible. Si otra ventana está guardando, intentá nuevamente.";
+        MessageBox.Show(this, "No se pudo acceder al historial. No se borraron los cierres guardados.\n\n" + detail, "Mesa · Historial", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+    private void Tabs_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!loading && e.Source == MainTabs && MainTabs.SelectedIndex == 1) LoadHistory();
+    }
+    private void RefreshHistory_Click(object sender, RoutedEventArgs e) => LoadHistory();
+    private void LoadHistory()
+    {
+        try
+        {
+            var selectedDate = (HistoryGrid.SelectedItem as HistoryRow)?.Close.Summary.Date;
+            var records = history.ReadAll();
+            EmptyHistory.Text = "Todavía no hay cierres guardados.\nCalculá las ventas y elegí Guardar cierre para empezar.";
+            savedCloses.Clear();
+            foreach (var record in records) savedCloses.Add(new HistoryRow(record));
+            HistoryStatus.Text = records.Count == 1 ? "1 cierre guardado · Más reciente primero" : $"{records.Count} cierres guardados · Más recientes primero";
+            EmptyHistory.Visibility = records.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            HistoryGrid.SelectedItem = savedCloses.FirstOrDefault(row => row.Close.Summary.Date == selectedDate) ?? savedCloses.FirstOrDefault();
+        }
+        catch (Exception error) when (IsStorageError(error))
+        {
+            savedCloses.Clear();
+            EmptyHistory.Text = "No se pudo cargar el historial. Probá Actualizar.";
+            EmptyHistory.Visibility = Visibility.Visible;
+            HistoryStatus.Text = "Historial no disponible";
+            ShowStorageError(error);
+        }
+    }
+    private void History_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (HistoryDetailButton is null || HistoryPrintButton is null) return;
+        HistoryDetailButton.IsEnabled = HistoryPrintButton.IsEnabled = HistoryGrid.SelectedItem is HistoryRow;
+    }
+    private void HistoryDetail_Click(object sender, RoutedEventArgs e)
+    {
+        if (HistoryGrid.SelectedItem is HistoryRow row)
+            new HistoryDetailWindow(row.Close) { Owner = this }.ShowDialog();
+    }
+    private void HistoryPrint_Click(object sender, RoutedEventArgs e)
+    {
+        if (HistoryGrid.SelectedItem is HistoryRow row)
+            new PrintPreviewWindow(row.Close.Summary) { Owner = this }.ShowDialog();
+    }
+    private void History_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (ItemsControl.ContainerFromElement(HistoryGrid, e.OriginalSource as DependencyObject) is DataGridRow)
+            HistoryDetail_Click(sender, e);
+    }
+    private void History_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) { HistoryDetail_Click(sender, e); e.Handled = true; }
     }
 
     private void Date_Changed(object sender, SelectionChangedEventArgs e)
@@ -180,7 +271,8 @@ public partial class MainWindow : Window
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.P && Keyboard.Modifiers == ModifierKeys.Control)
-        { Print_Click(sender, e); e.Handled = true; return; }
+        { if (MainTabs.SelectedIndex == 1) HistoryPrint_Click(sender, e); else Print_Click(sender, e); e.Handled = true; return; }
+        if (MainTabs.SelectedIndex != 0) return;
         if (e.Key == Key.Enter && Keyboard.FocusedElement is TextBox)
         { Calculate(); e.Handled = true; }
         if (Keyboard.FocusedElement is TextBox box && box.DataContext is SaleRow row && Keyboard.Modifiers == ModifierKeys.None
@@ -211,7 +303,7 @@ public partial class MainWindow : Window
     }
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        if (!HasInput) return;
-        e.Cancel = new ConfirmWindow("¿Querés cerrar Mesa?", "Las cantidades de esta sesión no se guardan. Podés volver e imprimir el resumen antes de salir.", "Sí, salir") { Owner = this }.ShowDialog() != true;
+        if (!HasInput || (TryDate(out var date) && SnapshotState.IsCurrent(summary, date, Quantities()) && CloseHistory.SameValues(summary, lastSaved))) return;
+        e.Cancel = new ConfirmWindow("¿Querés salir sin guardar este cierre?", "Hay cantidades que no guardaste. Podés conservar la pantalla y usar Guardar cierre. Los cierres que ya guardaste siguen en el historial.", "Salir sin guardar") { Owner = this }.ShowDialog() != true;
     }
 }

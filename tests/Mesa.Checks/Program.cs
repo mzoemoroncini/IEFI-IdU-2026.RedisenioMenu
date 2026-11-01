@@ -40,4 +40,5 @@ catch (ArgumentException) { passed++; Console.WriteLine("OK · No calcular un me
 var large = Sales.Calculate(date, Enumerable.Repeat("999999", 8).ToArray());
 Check(large.Units == 7999992 && large.Total == 29699970300m, "Cantidades máximas sin desbordamiento");
 Check(Sales.Money(6500m).Contains("6.500,00"), "Formato monetario argentino");
+HistoryChecks.Run(Check);
 Console.WriteLine($"\n{passed} verificaciones correctas.");

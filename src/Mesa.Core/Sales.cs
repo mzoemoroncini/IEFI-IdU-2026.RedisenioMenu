@@ -7,10 +7,10 @@ public sealed record SaleLine(Product Product, int Quantity)
 {
     public decimal Amount => Product.Price * Quantity;
 }
-public sealed record SaleSummary(DateTime Date, IReadOnlyList<SaleLine> Lines)
+public sealed record SaleSummary(DateTime Date, IReadOnlyList<SaleLine> Lines, decimal TaxRate = 0.18m)
 {
     public decimal Total => Lines.Sum(line => line.Amount);
-    public decimal Tax => decimal.Round(Total * 0.18m, 2, MidpointRounding.AwayFromZero);
+    public decimal Tax => decimal.Round(Total * TaxRate, 2, MidpointRounding.AwayFromZero);
     public int Units => Lines.Sum(line => line.Quantity);
 }
 
