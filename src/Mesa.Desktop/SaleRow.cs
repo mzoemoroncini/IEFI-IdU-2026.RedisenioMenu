@@ -12,6 +12,7 @@ public sealed class SaleRow(Product product, long menuId = 0) : INotifyPropertyC
     public Product Product { get; } = product;
     public long MenuId { get; } = menuId;
     public string Name => Product.Name;
+    public string Initial => Name.Trim()[..1].ToUpper(Sales.Argentina);
     public string Price => Sales.Money(Product.Price);
     public string Quantity
     {

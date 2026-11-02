@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private bool dateStorageFailed;
     private readonly CloseHistory history;
     private readonly ObservableCollection<HistoryRow> savedCloses = new();
+    private readonly string themePreferencePath;
     private bool loading = true;
     private bool dateInvalid;
     private bool validated;
@@ -33,6 +34,9 @@ public partial class MainWindow : Window
     public MainWindow(string databasePath)
     {
         history = new CloseHistory(databasePath);
+        themePreferencePath = Path.Combine(Path.GetDirectoryName(history.DatabasePath)!, "preferencias.json");
+        ThemeManager.Apply(ThemeManager.Load(themePreferencePath));
+        SourceInitialized += (_, _) => ThemeManager.UpdateWindowChrome(this);
         InitializeComponent();
         RowsControl.DataContext = rows;
         HistoryGrid.ItemsSource = savedCloses;
@@ -41,7 +45,20 @@ public partial class MainWindow : Window
         ClosingDate.SelectedDate = DateTime.Today;
         ClosingDate.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(Date_TextChanged));
         loading = false;
+        LightThemeButton.IsChecked = ThemeManager.Current == MesaTheme.Light;
+        DarkThemeButton.IsChecked = ThemeManager.Current == MesaTheme.Dark;
         RefreshState();
+    }
+
+    private void Theme_Changed(object sender, RoutedEventArgs e)
+    {
+        if (loading || sender is not RadioButton option) return;
+        var theme = option.Tag?.ToString() == "Dark" ? MesaTheme.Dark : MesaTheme.Light;
+        if (ThemeManager.Current == theme) return;
+        ThemeManager.Apply(theme);
+        var stored = ThemeManager.Save(themePreferencePath, theme);
+        RefreshState();
+        if (!stored) SetStatus("Se aplicó el tema, pero no se pudo recordar la preferencia para la próxima vez.");
     }
 
     private string[] Quantities() => rows.Select(row => row.Quantity).ToArray();
@@ -73,7 +90,7 @@ public partial class MainWindow : Window
     private void SetStatus(string message, bool error = false)
     {
         StatusText.Text = message;
-        StatusText.Foreground = (Brush)FindResource(error ? "Accent" : "Muted");
+        StatusText.Foreground = (Brush)FindResource(error ? "Danger" : "Muted");
         if (UIElementAutomationPeer.FromElement(StatusText) is AutomationPeer peer)
             peer.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
     }

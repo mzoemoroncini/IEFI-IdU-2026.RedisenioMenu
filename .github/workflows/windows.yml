@@ -25,6 +25,14 @@ jobs:
       - name: Verificar guardado, limpieza y calendario en Windows
         timeout-minutes: 3
         run: dotnet run --project tests/Mesa.UiChecks -c Release
+      - name: Guardar vistas de la interfaz
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mesa-Vistas
+          path: artifacts/Mesa-preview/
+          if-no-files-found: warn
+          retention-days: 30
       - name: Publicar aplicación con runtime incluido
         run: dotnet publish src/Mesa.Desktop/Mesa.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/Mesa --nologo
       - name: Incluir instrucciones
