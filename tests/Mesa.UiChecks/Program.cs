@@ -96,6 +96,9 @@ internal static class Program
     {
         visual.UpdateLayout();
         var image = new RenderTargetBitmap((int)Math.Ceiling(visual.ActualWidth), (int)Math.Ceiling(visual.ActualHeight),96,96,PixelFormats.Pbgra32);
+        var background = new DrawingVisual();
+        using (var drawing = background.RenderOpen()) drawing.DrawRectangle((Brush)Application.Current.Resources["Canvas"], null, new Rect(0,0,image.PixelWidth,image.PixelHeight));
+        image.Render(background);
         image.Render(visual);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         var directory = Path.GetFullPath("artifacts/Mesa-preview"); Directory.CreateDirectory(directory);
