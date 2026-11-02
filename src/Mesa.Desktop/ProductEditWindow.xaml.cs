@@ -23,6 +23,7 @@ public partial class ProductEditWindow : Window
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         NameError.Visibility = PriceError.Visibility = SaveError.Visibility = Visibility.Collapsed;
+        NameError.Text = PriceError.Text = SaveError.Text = "";
         var name = MenuCatalog.NormalizeName(NameInput.Text);
         if (name.Length is < 1 or > 200)
         { NameError.Text = "Ingresá un nombre de hasta 200 caracteres."; NameError.Visibility = Visibility.Visible; NameInput.Focus(); return; }

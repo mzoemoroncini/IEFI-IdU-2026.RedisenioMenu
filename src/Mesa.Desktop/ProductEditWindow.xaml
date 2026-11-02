@@ -3,10 +3,10 @@
     <TextBlock x:Name="Heading" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,10"/>
     <TextBlock Text="Los cierres del historial conservan sus productos y precios originales." Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,20"/>
     <Label Content="_Nombre del producto" Target="{Binding ElementName=NameInput}" Padding="0,0,0,6"/>
-    <TextBox x:Name="NameInput" MaxLength="200" AutomationProperties.Name="Nombre del producto"/>
+    <TextBox x:Name="NameInput" MaxLength="200" AutomationProperties.Name="Nombre del producto" AutomationProperties.HelpText="{Binding Text, ElementName=NameError}"/>
     <TextBlock x:Name="NameError" Foreground="{DynamicResource Danger}" FontSize="12" Margin="0,5,0,0" Visibility="Collapsed"/>
     <Label Content="_Precio unitario ($)" Target="{Binding ElementName=PriceInput}" Padding="0,18,0,6"/>
-    <TextBox x:Name="PriceInput" MaxLength="20" AutomationProperties.Name="Precio unitario en pesos"/>
+    <TextBox x:Name="PriceInput" MaxLength="20" AutomationProperties.Name="Precio unitario en pesos" AutomationProperties.HelpText="{Binding Text, ElementName=PriceError}"/>
     <TextBlock Text="Ejemplo: 6500 o 6500,50. Sin separadores de miles." Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,6,0,0"/>
     <TextBlock x:Name="PriceError" Foreground="{DynamicResource Danger}" FontSize="12" Margin="0,5,0,0" Visibility="Collapsed"/>
     <TextBlock x:Name="SaveError" Foreground="{DynamicResource Danger}" Margin="0,18,0,0" Visibility="Collapsed" AutomationProperties.LiveSetting="Assertive"/>

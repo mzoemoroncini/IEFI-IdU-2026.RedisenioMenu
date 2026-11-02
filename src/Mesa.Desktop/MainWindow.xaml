@@ -78,7 +78,7 @@
               </DataTemplate></ItemsControl.ItemTemplate>
             </ItemsControl>
           </ScrollViewer>
-          <TextBlock Grid.Row="3" x:Name="QuantityHelp" Text="Tab / Enter: siguiente cantidad  ·  Totales automáticos" Margin="20,13" FontSize="12" Foreground="{DynamicResource Muted}"/>
+          <TextBlock Grid.Row="3" x:Name="QuantityHelp" Text="Tab / Enter: siguiente cantidad · ↑ / ↓: ajustar cantidad" Margin="20,13" FontSize="12" Foreground="{DynamicResource Muted}"/>
         </Grid>
       </Border>
       <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">

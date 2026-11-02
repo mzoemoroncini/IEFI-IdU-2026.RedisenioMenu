@@ -27,6 +27,7 @@ internal static class Program
             var path = Path.Combine(directory, "cierres.db");
             var window = new MainWindow(path);
             window.Show(); Pump();
+            CheckContrast(app);
             Check(window.WindowStyle == WindowStyle.SingleBorderWindow && window.ResizeMode == ResizeMode.CanResize, "La ventana conserva la barra nativa con cerrar, minimizar y maximizar");
             Check(WindowBounds.IsInsideWorkArea(window), "Al abrir Mesa toda la ventana queda dentro del área útil de la pantalla");
             foreach (double scale in new[] {1d, 1.25d, 1.5d, 2d})
@@ -51,6 +52,7 @@ internal static class Program
             Capture((FrameworkElement)window.Content, "Mesa-claro");
             var totalBeforeTheme = ((TextBlock)window.FindName("TotalValue")).Text;
             dark.IsChecked = true; Pump();
+            CheckContrast(app);
             Check(ThemeManager.Current == MesaTheme.Dark && ((SolidColorBrush)app.Resources["Canvas"]).Color == Color.FromRgb(24,26,24), "El selector aplica la paleta oscura");
             Check(rows[0].Quantity == "2" && ((TextBlock)window.FindName("TotalValue")).Text == totalBeforeTheme, "Cambiar de tema conserva la carga y los cálculos");
             Check(ThemeManager.Load(Path.Combine(directory,"preferencias.json")) == MesaTheme.Dark, "El tema elegido queda guardado fuera de la base de ventas");
@@ -58,6 +60,7 @@ internal static class Program
             light.IsChecked = true; Pump();
             Check(ThemeManager.Current == MesaTheme.Light && ((SolidColorBrush)app.Resources["Surface"]).Color == Colors.White, "El selector vuelve al tema claro");
             var save = (Button)window.FindName("SaveButton");
+            Check(save.FocusVisualStyle is not null, "Guardar cierre tiene un anillo de foco exterior para teclado");
             Check(save.IsEnabled, "Una fecha nueva permite guardar cantidades válidas");
             save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
             Check(rows.All(row => row.Quantity == "0") && ((TextBlock)window.FindName("TotalValue")).Text == Sales.Money(0), "La interfaz limpia cantidades y totales tras guardar");
@@ -71,6 +74,7 @@ internal static class Program
             picker.IsDropDownOpen = true; Pump();
             var popup = (Popup)picker.Template.FindName("PART_Popup", picker);
             var calendar = Find<Calendar>(popup.Child) ?? throw new Exception("El calendario no abrió");
+            Check(Find<Button>(calendar, "PART_PreviousButton")?.Focusable == true && Find<Button>(calendar, "PART_NextButton")?.Focusable == true, "Anterior y Siguiente del calendario admiten foco de teclado");
             Check(calendar.FirstDayOfWeek == DayOfWeek.Monday, "El calendario comienza el lunes");
             Check(Find<CalendarDayButton>(calendar) is not null, "La plantilla moderna genera los días del mes");
             Capture(calendar, "Mesa-calendario");
@@ -85,6 +89,11 @@ internal static class Program
             editor.Show(); Pump();
             var editRows = (ObservableCollection<SaleRow>)((ItemsControl)editor.FindName("EditRows")).ItemsSource;
             Check(editRows[0].Quantity == "2" && !((Button)editor.FindName("SaveChangesButton")).IsEnabled, "Editar abre las cantidades históricas sin cambios pendientes");
+            var editBox = Find<TextBox>(editor);
+            Check(editBox is not null, "La edición del historial expone campos de cantidad");
+            editRows[0].Quantity = "-1"; Pump();
+            Check(!string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetHelpText(editBox!)), "El error de cantidad está asociado al campo para tecnologías de asistencia");
+            editRows[0].Quantity = "2"; Pump();
             Capture((FrameworkElement)editor.Content, "Mesa-editar-cierre");
             editor.Close();
             var navigation = (TabControl)window.FindName("MainTabs");
@@ -104,6 +113,19 @@ internal static class Program
         }
         catch (Exception error) { Console.Error.WriteLine(error); return 1; }
         finally { app.Shutdown(); Directory.Delete(directory, recursive: true); }
+    }
+    private static void CheckContrast(Application app)
+    {
+        double Luminance(string key)
+        {
+            var c = ((SolidColorBrush)app.Resources[key]).Color;
+            double Linear(byte value) { double v = value / 255d; return v <= .04045 ? v / 12.92 : Math.Pow((v + .055) / 1.055, 2.4); }
+            return .2126 * Linear(c.R) + .7152 * Linear(c.G) + .0722 * Linear(c.B);
+        }
+        double Ratio(string a, string b) { var x = Luminance(a); var y = Luminance(b); return (Math.Max(x,y) + .05) / (Math.Min(x,y) + .05); }
+        foreach (var background in new[] { "Surface", "Soft", "Canvas", "Sidebar" })
+            Check(Ratio("Muted", background) >= 4.5, $"Texto secundario legible sobre {background} en tema {ThemeManager.Current}");
+        Check(Ratio("ControlBorder", "Surface") >= 3, $"Los bordes de entrada se distinguen en tema {ThemeManager.Current}");
     }
     private static void Capture(FrameworkElement visual, string name)
     {

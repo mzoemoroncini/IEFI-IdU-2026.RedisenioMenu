@@ -12,9 +12,9 @@ public enum MesaTheme { Light, Dark }
 public static class ThemeManager
 {
     public static MesaTheme Current { get; private set; } = MesaTheme.Light;
-    private static readonly string[] Keys = ["Accent", "AccentInk", "AccentSoft", "Ink", "Muted", "Line", "Soft", "Surface", "Canvas", "Sidebar", "Summary", "OnSummary", "OnAccent", "TotalMuted", "Danger", "Focus", "Selection"];
-    private static readonly string[] Light = ["#A9553B", "#8E452F", "#F8E7DE", "#302C28", "#80766D", "#EAE3DB", "#F7F3ED", "#FFFFFF", "#F6F4EF", "#FCFBF8", "#8D472F", "#FFF8F1", "#FFFFFF", "#F0DBD0", "#BA4539", "#9E5E42", "#FAE9DF"];
-    private static readonly string[] Dark = ["#E4A37E", "#F3BDA0", "#3C3028", "#F1EEE7", "#B5B2A8", "#3B403B", "#2F332F", "#242724", "#181A18", "#1D201D", "#3C3028", "#FFF7EF", "#251D18", "#D7BCAB", "#F19388", "#DAAA88", "#45352B"];
+    private static readonly string[] Keys = ["Accent", "AccentInk", "AccentSoft", "Ink", "Muted", "Line", "Soft", "Surface", "Canvas", "Sidebar", "Summary", "OnSummary", "OnAccent", "TotalMuted", "Danger", "Focus", "Selection", "ControlBorder"];
+    private static readonly string[] Light = ["#A9553B", "#8E452F", "#F8E7DE", "#302C28", "#6E6258", "#EAE3DB", "#F7F3ED", "#FFFFFF", "#F6F4EF", "#FCFBF8", "#8D472F", "#FFF8F1", "#FFFFFF", "#F0DBD0", "#BA4539", "#9E5E42", "#FAE9DF", "#8E8276"];
+    private static readonly string[] Dark = ["#E4A37E", "#F3BDA0", "#3C3028", "#F1EEE7", "#B5B2A8", "#3B403B", "#2F332F", "#242724", "#181A18", "#1D201D", "#3C3028", "#FFF7EF", "#251D18", "#D7BCAB", "#F19388", "#DAAA88", "#45352B", "#7B857B"];
 
     public static void Apply(MesaTheme theme)
     {

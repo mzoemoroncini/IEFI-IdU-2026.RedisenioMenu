@@ -38,7 +38,7 @@ public partial class MainWindow
             }
             menuAvailable = true;
             ProductsCount.Text = products.Count == 1 ? "1 producto" : $"{products.Count} productos";
-            QuantityHelp.Text = products.Count == 0 ? "No hay productos. Agregá uno desde la pestaña Menú." : "Tab / Enter: siguiente cantidad  ·  Totales automáticos";
+            QuantityHelp.Text = products.Count == 0 ? "No hay productos. Agregá uno desde la pestaña Menú." : "Tab / Enter: siguiente cantidad · ↑ / ↓: ajustar cantidad";
             MenuStatus.Text = $"{products.Count} productos disponibles" + (products.Count == MenuCatalog.MaximumProducts ? " · Se alcanzó el máximo de 100 productos." : "");
             EmptyMenu.Text = "No hay productos en el menú.\nElegí Agregar producto para empezar.";
             EmptyMenu.Visibility = products.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -74,6 +74,7 @@ public partial class MainWindow
         var editor = new ProductEditWindow(catalog, product) { Owner = this };
         if (editor.ShowDialog() != true || editor.SavedProduct is null) return;
         LoadMenu(editor.SavedProduct.Id);
+        EditProductButton.Focus();
         if (menuAvailable) MenuStatus.Text = $"Se guardó «{editor.SavedProduct.Name}». El historial conserva los datos anteriores.";
     }
     private void RemoveProduct_Click(object sender, RoutedEventArgs e)
@@ -88,6 +89,7 @@ public partial class MainWindow
         {
             catalog.Remove(product.Id);
             LoadMenu();
+            if (EditProductButton.IsEnabled) EditProductButton.Focus(); else AddProductButton.Focus();
             if (menuAvailable) MenuStatus.Text = $"Se quitó «{product.Name}» del menú. Sus ventas anteriores siguen en el historial.";
         }
         catch (Exception error) when (IsStorageError(error) || error is InvalidOperationException)
