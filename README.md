@@ -12,6 +12,10 @@ También podés ejecutar el proyecto desde Visual Studio o una terminal, siguien
 
 La versión incluida es para Windows 10/11 de 64 bits (x64). Incluye el runtime: no necesita instalar .NET ni conectarse a Internet. No requiere permisos de administrador.
 
+## Ventana y escala de Windows
+
+Mesa ajusta el tamaño inicial al área útil del monitor, respetando la barra de tareas y la escala de Windows. La barra nativa conserva minimizar, maximizar y cerrar. El ajuste también se revisa al cambiar la escala entre monitores. No modifica la configuración de pantalla de Windows.
+
 ## Apariencia
 
 Mesa 1.4 presenta una navegación lateral para Cierre del día, Historial y Menú. La tabla de productos, los campos y las ventanas utilizan un mismo diseño con bordes suaves y colores cálidos. El total de ventas ocupa una tarjeta destacada.
@@ -118,5 +122,5 @@ La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto.
 - Solución compilada en Release sin advertencias ni errores.
 - Publicación autocontenida para Windows x64; ejecutable PE de interfaz gráfica.
 - 95 verificaciones de lógica correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
-- La integración continua ejecuta 19 verificaciones de interfaz WPF en Windows con una base temporal: guardar y limpiar, conservación del historial, bloqueo de día repetido, cambio de fecha, apertura del calendario, navegación de meses y años, y apertura de edición histórica.
+- La integración continua ejecuta 27 verificaciones de interfaz WPF en Windows con una base temporal: guardar y limpiar, conservación del historial, bloqueo de día repetido, cambio de fecha, apertura del calendario, navegación de meses y años, y apertura de edición histórica.
 - El entorno de preparación Linux compila el código; las verificaciones WPF se ejecutan en el runner Windows. El aspecto visual final, el recorrido manual de teclado y la impresión se pueden comprobar con el ejemplo anterior.

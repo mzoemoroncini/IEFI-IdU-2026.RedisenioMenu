@@ -27,6 +27,18 @@ internal static class Program
             var path = Path.Combine(directory, "cierres.db");
             var window = new MainWindow(path);
             window.Show(); Pump();
+            Check(window.WindowStyle == WindowStyle.SingleBorderWindow && window.ResizeMode == ResizeMode.CanResize, "La ventana conserva la barra nativa con cerrar, minimizar y maximizar");
+            Check(WindowBounds.IsInsideWorkArea(window), "Al abrir Mesa toda la ventana queda dentro del área útil de la pantalla");
+            foreach (double scale in new[] {1d, 1.25d, 1.5d, 2d})
+            {
+                var area = new Rect(0,0,1920,1015);
+                var fitted = WindowBounds.FitInWorkArea(area,new Rect(100,-100,1280*scale,820*scale),scale);
+                Check(area.Contains(fitted) && fitted.Top >= 12*scale, $"La barra superior queda visible con escala {scale*100:0} %");
+            }
+            var leftMonitor = new Rect(-1366,-300,1366,728);
+            Check(leftMonitor.Contains(WindowBounds.FitInWorkArea(leftMonitor,new Rect(-1600,-600,1600,1100),1.5)), "Se respeta el área útil de un monitor situado a la izquierda");
+            window.Top = -500; WindowBounds.EnsureVisible(window,center:false); Pump();
+            Check(WindowBounds.IsInsideWorkArea(window), "Una ventana fuera de pantalla se recupera sin perder el tamaño disponible");
             var picker = (DatePicker)window.FindName("ClosingDate");
             var date = new DateTime(2026, 11, 1);
             picker.SelectedDate = date; Pump();
@@ -81,6 +93,7 @@ internal static class Program
             navigation.SelectedIndex = 2; Pump();
             Capture((FrameworkElement)window.Content, "Mesa-menu");
             navigation.SelectedIndex = 0; window.Width = window.MinWidth; window.Height = window.MinHeight; Pump();
+            WindowBounds.EnsureVisible(window,center:false); Pump();
             Capture((FrameworkElement)window.Content, "Mesa-tamano-minimo");
             dark.IsChecked = true; Pump();
             var reopened = new MainWindow(path); reopened.Show(); Pump();

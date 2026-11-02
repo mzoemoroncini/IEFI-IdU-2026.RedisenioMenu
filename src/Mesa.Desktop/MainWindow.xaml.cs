@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         themePreferencePath = Path.Combine(Path.GetDirectoryName(history.DatabasePath)!, "preferencias.json");
         ThemeManager.Apply(ThemeManager.Load(themePreferencePath));
         SourceInitialized += (_, _) => ThemeManager.UpdateWindowChrome(this);
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(new Action(() => WindowBounds.EnsureVisible(this, center: false)));
         InitializeComponent();
         RowsControl.DataContext = rows;
         HistoryGrid.ItemsSource = savedCloses;
@@ -360,6 +361,7 @@ public partial class MainWindow : Window
     }
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        WindowBounds.EnsureVisible(this);
         LoadMenu();
         if (rows.Count > 0) FocusRow(rows[0]);
     }
