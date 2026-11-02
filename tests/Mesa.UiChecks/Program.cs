@@ -62,6 +62,19 @@ internal static class Program
             var save = (Button)window.FindName("SaveButton");
             Check(save.FocusVisualStyle is not null, "Guardar cierre tiene un anillo de foco exterior para teclado");
             Check(save.IsEnabled, "Una fecha nueva permite guardar cantidades válidas");
+            var draftBeforeClear = rows[0].Quantity;
+            var clear = (Button)window.FindName("ClearButton");
+            Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+            {
+                var confirmation = app.Windows.OfType<ConfirmWindow>().Single();
+                ((Button)confirmation.FindName("AcceptButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }), DispatcherPriority.ApplicationIdle);
+            clear.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
+            var undoButton = (Button)window.FindName("UndoClearButton");
+            Check(rows.All(r => r.Quantity == "0") && undoButton.IsVisible, "Limpiar manualmente ofrece deshacer sin guardar un cierre");
+            undoButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
+            Check(rows[0].Quantity == draftBeforeClear && !undoButton.IsVisible, "Deshacer recupera la carga y desaparece tras utilizarse");
+            Check(new CloseHistory(path).Find(date) is null, "Deshacer una limpieza no escribe en el historial");
             save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
             Check(rows.All(row => row.Quantity == "0") && ((TextBlock)window.FindName("TotalValue")).Text == Sales.Money(0), "La interfaz limpia cantidades y totales tras guardar");
             Check(new CloseHistory(path).Find(date)!.Summary.Units == 2, "Los datos se guardaron antes de limpiar la pantalla");
@@ -98,6 +111,14 @@ internal static class Program
             editor.Close();
             var navigation = (TabControl)window.FindName("MainTabs");
             navigation.SelectedIndex = 1; Pump();
+            var from = (DatePicker)window.FindName("HistoryFrom");
+            from.SelectedDate = date.AddDays(5); Pump();
+            Check(((DataGrid)window.FindName("HistoryGrid")).Items.Count == 0 && ((TextBlock)window.FindName("EmptyHistory")).Text.Contains("Limpiar filtros"), "El historial explica una búsqueda sin coincidencias");
+            from.SelectedDate = null; from.Text = ""; Pump();
+            Check(((DataGrid)window.FindName("HistoryGrid")).Items.Count == 1 && ((Button)window.FindName("HistoryEditButton")).IsEnabled, "Al limpiar la fecha se recupera el cierre y su acción de editar");
+            var help = new HelpWindow(1) { Owner = window }; help.Show(); Pump();
+            Check(((TextBlock)help.FindName("Heading")).Text.Contains("cierres") && ((ItemsControl)help.FindName("Steps")).Items.Count > 0, "La ayuda muestra instrucciones de la sección consultada");
+            help.Close();
             Capture((FrameworkElement)window.Content, "Mesa-historial");
             navigation.SelectedIndex = 2; Pump();
             Capture((FrameworkElement)window.Content, "Mesa-menu");

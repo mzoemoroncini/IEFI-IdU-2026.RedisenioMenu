@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private bool loading = true;
     private bool dateInvalid;
     private bool validated;
+    private readonly DraftUndo clearedDraft = new();
 
     public MainWindow() : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Mesa", "cierres.db")) { }
 
@@ -43,6 +44,8 @@ public partial class MainWindow : Window
         HistoryGrid.ItemsSource = savedCloses;
         catalog = new MenuCatalog(history.DatabasePath);
         MenuGrid.ItemsSource = menuProducts;
+        HistoryFrom.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(HistoryFilter_TextChanged));
+        HistoryTo.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(HistoryFilter_TextChanged));
         ClosingDate.SelectedDate = DateTime.Today;
         ClosingDate.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(Date_TextChanged));
         loading = false;
@@ -83,6 +86,7 @@ public partial class MainWindow : Window
     private void Date_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (loading) return;
+        clearedDraft.Clear();
         checkedDate = null;
         dateInvalid = !DateTime.TryParse(DateText(), Sales.Argentina, DateTimeStyles.AllowWhiteSpaces, out _);
         RefreshState();
@@ -99,6 +103,7 @@ public partial class MainWindow : Window
     private void Row_Changed(object? sender, PropertyChangedEventArgs e)
     {
         if (loading || e.PropertyName != nameof(SaleRow.Quantity)) return;
+        clearedDraft.Clear();
         validated = true;
         RefreshState();
     }
@@ -107,6 +112,7 @@ public partial class MainWindow : Window
     {
         if (loading) return;
         RefreshRegisteredDay();
+        UndoClearButton.Visibility = selectedClose is null && clearedDraft.CanRestore(DateText(), rows.Select(r => r.MenuId).ToArray()) ? Visibility.Visible : Visibility.Collapsed;
         var canCalculate = menuAvailable && rows.Count > 0;
         if (!canCalculate)
         {
@@ -169,13 +175,14 @@ public partial class MainWindow : Window
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
         if (new ConfirmWindow("¿Querés borrar todas las cantidades?", "Las cantidades y los resultados volverán a cero. Los cierres guardados se conservan en el historial.", "Sí, limpiar") { Owner = this }.ShowDialog() != true) return;
+        clearedDraft.Capture(DateText(), rows.Select(r => r.MenuId).ToArray(), Quantities());
         loading = true;
         foreach (var row in rows) row.Quantity = "0";
         summary = null;
         validated = false;
         loading = false;
         RefreshState();
-        SetStatus("Se limpiaron las cantidades y los resultados.");
+        SetStatus("Se limpiaron las cantidades. Podés usar Deshacer limpieza hasta que cambies cantidades, fecha o menú, o guardes el cierre.");
         if (rows.Count > 0) FocusRow(rows[0]);
     }
 
@@ -193,6 +200,7 @@ public partial class MainWindow : Window
         try
         {
             var completed = DailyCloseWorkflow.SaveAndClear(history, summary);
+            clearedDraft.Clear();
             loading = true;
             for (int i = 0; i < rows.Count; i++)
             {
@@ -281,13 +289,8 @@ public partial class MainWindow : Window
         try
         {
             var selectedDate = (HistoryGrid.SelectedItem as HistoryRow)?.Close.Summary.Date;
-            var records = history.ReadAll();
-            EmptyHistory.Text = "Todavía no hay cierres guardados.\nCargá las cantidades y elegí Guardar cierre para empezar.";
-            savedCloses.Clear();
-            foreach (var record in records) savedCloses.Add(new HistoryRow(record));
-            HistoryStatus.Text = records.Count == 1 ? "1 cierre guardado · Más reciente primero" : $"{records.Count} cierres guardados · Más recientes primero";
-            EmptyHistory.Visibility = records.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            HistoryGrid.SelectedItem = savedCloses.FirstOrDefault(row => row.Close.Summary.Date == selectedDate) ?? savedCloses.FirstOrDefault();
+            allCloses = history.ReadAll();
+            ApplyHistoryFilters(selectedDate);
         }
         catch (Exception error) when (IsStorageError(error))
         {
@@ -301,7 +304,7 @@ public partial class MainWindow : Window
     private void History_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (HistoryDetailButton is null || HistoryPrintButton is null) return;
-        HistoryDetailButton.IsEnabled = HistoryPrintButton.IsEnabled = HistoryGrid.SelectedItem is HistoryRow;
+        HistoryEditButton.IsEnabled = HistoryDetailButton.IsEnabled = HistoryPrintButton.IsEnabled = HistoryGrid.SelectedItem is HistoryRow;
     }
     private void HistoryDetail_Click(object sender, RoutedEventArgs e)
     {
@@ -325,6 +328,7 @@ public partial class MainWindow : Window
 
     private void Date_Changed(object sender, SelectionChangedEventArgs e)
     {
+        clearedDraft.Clear();
         checkedDate = null;
         dateInvalid = ClosingDate.SelectedDate is null;
         // DatePicker actualiza Text después del evento SelectedDateChanged.
@@ -345,6 +349,7 @@ public partial class MainWindow : Window
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F1) { Help_Click(sender, e); e.Handled = true; return; }
         if (e.Key == Key.P && Keyboard.Modifiers == ModifierKeys.Control)
         { if (MainTabs.SelectedIndex == 1) HistoryPrint_Click(sender, e); else if (MainTabs.SelectedIndex == 0) Print_Click(sender, e); e.Handled = true; return; }
         if (MainTabs.SelectedIndex != 0) return;

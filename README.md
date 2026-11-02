@@ -32,7 +32,11 @@ El selector **Claro / Oscuro**, en la parte inferior izquierda, cambia el tema d
 6. **Guardar cierre** conserva el cálculo en la base de datos local y, solo después de confirmar el guardado, limpia todas las cantidades y los totales. La fecha queda seleccionada, marcada como registrada. Para una nueva carga, elegir otra fecha.
 7. Si la fecha ya está guardada, se muestra **Este día ya está registrado** y se bloquea el guardado: **Ver en historial** lleva a ese registro; **Editar registro** abre sus cantidades originales. Al guardar cambios se pide confirmación y se mantiene un solo registro por día. Los productos, precios y tasa históricos se conservan, aunque hayan cambiado o se hayan quitado del menú.
 8. En **Historial**, seleccionar un día para **Ver detalle** o **Imprimir**. También se puede abrir el detalle con doble clic o Enter.
-9. **Limpiar cantidades** solicita confirmación y vuelve a cero. Conserva la fecha elegida y los cierres del historial.
+9. **Limpiar cantidades** solicita confirmación y vuelve a cero. **Deshacer limpieza** recupera la última carga manual hasta que cambies cantidades, fecha o menú, o guardes un cierre. La limpieza posterior al guardado se corrige desde el registro histórico.
+
+**Ayuda · F1** muestra una guía breve según la sección abierta. En Historial, **Desde** y **Hasta** filtran un período incluyendo ambos extremos; **Limpiar filtros** vuelve a mostrar todos los cierres. **Editar registro** permite corregir las cantidades del día seleccionado.
+
+Cuando Windows usa alto contraste, Mesa respeta los colores del sistema.
 
 Tab y Shift+Tab recorren los campos y acciones. Enter desde una cantidad avanza al siguiente campo. Ctrl+P abre la vista previa si hay ventas y los datos son válidos. En la confirmación, Conservar recibe el foco; Esc cancela y Enter activa el botón enfocado.
 
@@ -121,6 +125,6 @@ La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto.
 
 - Solución compilada en Release sin advertencias ni errores.
 - Publicación autocontenida para Windows x64; ejecutable PE de interfaz gráfica.
-- 95 verificaciones de lógica correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
-- La integración continua ejecuta 27 verificaciones de interfaz WPF en Windows con una base temporal: guardar y limpiar, conservación del historial, bloqueo de día repetido, cambio de fecha, apertura del calendario, navegación de meses y años, y apertura de edición histórica.
+- 106 verificaciones de lógica correctas: cálculos, validaciones, historial SQLite, reemplazos, transacciones, actualización desde la base anterior, alta/edición/baja de productos, precios y nombres, menú vacío, y conservación de los cierres después de modificar o borrar productos.
+- La integración continua ejecuta verificaciones de interfaz WPF en Windows con una base temporal: guardar y limpiar, conservación del historial, bloqueo de día repetido, cambio de fecha, apertura del calendario, navegación de meses y años, y apertura de edición histórica.
 - El entorno de preparación Linux compila el código; las verificaciones WPF se ejecutan en el runner Windows. El aspecto visual final, el recorrido manual de teclado y la impresión se pueden comprobar con el ejemplo anterior.

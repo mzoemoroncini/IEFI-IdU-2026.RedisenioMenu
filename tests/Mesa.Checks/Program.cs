@@ -43,4 +43,5 @@ Check(Sales.Money(6500m).Contains("6.500,00"), "Formato monetario argentino");
 HistoryChecks.Run(Check);
 WorkflowChecks.Run(Check);
 MenuChecks.Run(Check);
+UsabilityChecks.Run(Check);
 Console.WriteLine($"\n{passed} verificaciones correctas.");

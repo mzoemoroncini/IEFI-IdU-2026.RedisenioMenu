@@ -21,8 +21,18 @@ public static class ThemeManager
         var colors = theme == MesaTheme.Dark ? Dark : Light;
         for (int i = 0; i < Keys.Length; i++)
             Application.Current.Resources[Keys[i]] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colors[i]));
+        // Respect Windows accessibility colors instead of overriding a high-contrast theme.
+        if (SystemParameters.HighContrast) ApplyHighContrast(Application.Current.Resources);
         Current = theme;
         foreach (Window window in Application.Current.Windows) UpdateWindowChrome(window);
+    }
+
+    private static void ApplyHighContrast(ResourceDictionary resources)
+    {
+        foreach (var key in new[] { "Surface", "Canvas", "Sidebar", "Soft", "AccentSoft", "Selection" }) resources[key] = SystemColors.WindowBrush;
+        foreach (var key in new[] { "Ink", "Muted", "Danger", "ControlBorder", "Line" }) resources[key] = SystemColors.WindowTextBrush;
+        foreach (var key in new[] { "Accent", "AccentInk", "Summary", "Focus" }) resources[key] = SystemColors.HighlightBrush;
+        foreach (var key in new[] { "OnAccent", "OnSummary", "TotalMuted" }) resources[key] = SystemColors.HighlightTextBrush;
     }
 
     public static void UpdateWindowChrome(Window window)

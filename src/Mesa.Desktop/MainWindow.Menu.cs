@@ -20,6 +20,7 @@ public partial class MainWindow
             selectedId ??= (MenuGrid.SelectedItem as MenuProduct)?.Id;
             if (!menuProducts.SequenceEqual(products))
             {
+                clearedDraft.Clear();
                 var previousLoading = loading;
                 loading = true;
                 var quantities = rows.ToDictionary(row => row.MenuId, row => row.Quantity);
