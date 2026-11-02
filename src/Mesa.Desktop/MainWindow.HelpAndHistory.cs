@@ -9,6 +9,21 @@ namespace Mesa.Desktop;
 public partial class MainWindow
 {
     private IReadOnlyList<SavedClose> allCloses = [];
+    private bool? compactSales;
+    private void UpdateSalesLayout()
+    {
+        bool compact = SalesPanels.ActualWidth < 900;
+        if (compactSales == compact) return;
+        compactSales = compact;
+        SalesScroll.VerticalScrollBarVisibility = compact ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+        ProductsPanel.Height = compact ? 420 : double.NaN;
+        SalesGap.Width = new GridLength(compact ? 0 : 20);
+        SummaryColumn.Width = new GridLength(compact ? 0 : 292);
+        Grid.SetColumn(SummaryScroll, compact ? 0 : 2);
+        Grid.SetRow(SummaryScroll, compact ? 1 : 0);
+        SummaryScroll.Margin = compact ? new Thickness(0,18,0,0) : new Thickness(0);
+        SummaryScroll.VerticalScrollBarVisibility = compact ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+    }
     private void UndoClear_Click(object sender, RoutedEventArgs e)
     {
         if (selectedClose is not null) return;

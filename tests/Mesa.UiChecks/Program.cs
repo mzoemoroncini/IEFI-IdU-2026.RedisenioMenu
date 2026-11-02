@@ -28,6 +28,8 @@ internal static class Program
             var window = new MainWindow(path);
             window.Show(); Pump();
             CheckContrast(app);
+            var productName = Find<TextBlock>((ItemsControl)window.FindName("RowsControl"), "ProductName");
+            Check(productName is { IsVisible: true, ActualWidth: >= 100 }, "Los nombres de producto conservan espacio legible en una pantalla pequeña");
             Check(window.WindowStyle == WindowStyle.SingleBorderWindow && window.ResizeMode == ResizeMode.CanResize, "La ventana conserva la barra nativa con cerrar, minimizar y maximizar");
             Check(WindowBounds.IsInsideWorkArea(window), "Al abrir Mesa toda la ventana queda dentro del área útil de la pantalla");
             foreach (double scale in new[] {1d, 1.25d, 1.5d, 2d})

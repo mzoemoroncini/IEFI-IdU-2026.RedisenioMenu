@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(new Action(() => WindowBounds.EnsureVisible(this, center: false)));
         InitializeComponent();
         RowsControl.DataContext = rows;
+        SalesPanels.SizeChanged += (_, _) => UpdateSalesLayout();
         HistoryGrid.ItemsSource = savedCloses;
         catalog = new MenuCatalog(history.DatabasePath);
         MenuGrid.ItemsSource = menuProducts;

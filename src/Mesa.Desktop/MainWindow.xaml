@@ -41,9 +41,10 @@
         <DatePicker Style="{StaticResource MesaDatePicker}" x:Name="ClosingDate" SelectedDateFormat="Short" SelectedDateChanged="Date_Changed" DateValidationError="Date_Invalid" LostKeyboardFocus="Date_FocusLost" FontSize="14" Padding="5" AutomationProperties.Name="Fecha del cierre"/>
       </StackPanel>
     </Grid>
-    <Grid Grid.Row="1">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/><ColumnDefinition Width="292"/></Grid.ColumnDefinitions>
-      <Border Style="{StaticResource Panel}">
+    <ScrollViewer x:Name="SalesScroll" Grid.Row="1" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled" Focusable="False"><Grid x:Name="SalesPanels">
+      <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="SalesGap" Width="20"/><ColumnDefinition x:Name="SummaryColumn" Width="292"/></Grid.ColumnDefinitions>
+      <Border x:Name="ProductsPanel" Style="{StaticResource Panel}">
         <Grid>
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
           <Grid Margin="20,18"><StackPanel><TextBlock Text="Productos vendidos" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Todo lo que vendiste en esta fecha" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel><TextBlock x:Name="ProductsCount" Text="0 productos" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center"/></Grid>
@@ -60,7 +61,7 @@
               <ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type local:SaleRow}">
                 <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="18,14">
                   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="132"/><ColumnDefinition Width="102"/></Grid.ColumnDefinitions>
-                    <Grid Margin="0,0,10,0"><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="32" Height="32" Background="{DynamicResource Soft}" CornerRadius="10" VerticalAlignment="Center"><TextBlock Text="{Binding Initial}" Foreground="{DynamicResource AccentInk}" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" FontSize="13" Margin="10,0,0,0"/></Grid>
+                    <Grid Margin="0,0,10,0"><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="32" Height="32" Background="{DynamicResource Soft}" CornerRadius="10" VerticalAlignment="Center"><TextBlock Text="{Binding Initial}" Foreground="{DynamicResource AccentInk}" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock x:Name="ProductName" Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" FontSize="13" Margin="10,0,0,0"/></Grid>
                     <TextBlock Grid.Column="1" Text="{Binding Price}" VerticalAlignment="Center" TextAlignment="Right" FontSize="12" Foreground="{DynamicResource Muted}"/>
                     <StackPanel Grid.Column="2" Margin="8,0">
                       <Border Background="{DynamicResource Soft}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="9"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="27"/><ColumnDefinition Width="*"/><ColumnDefinition Width="27"/></Grid.ColumnDefinitions>
@@ -81,7 +82,7 @@
           <TextBlock Grid.Row="3" x:Name="QuantityHelp" Text="Tab / Enter: siguiente cantidad · ↑ / ↓: ajustar cantidad" Margin="20,13" FontSize="12" Foreground="{DynamicResource Muted}"/>
         </Grid>
       </Border>
-      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+      <ScrollViewer x:Name="SummaryScroll" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
         <Border Style="{StaticResource Panel}" Padding="20">
           <StackPanel>
             <Grid Margin="0,0,0,18" TextElement.Foreground="{DynamicResource Ink}"><TextBlock Text="Resumen del cierre" FontSize="16" FontWeight="SemiBold"/><Border HorizontalAlignment="Right" Background="{DynamicResource Soft}" CornerRadius="9" Padding="6,3"><TextBlock Text="ARS" Foreground="{DynamicResource Muted}" FontSize="9" FontWeight="SemiBold"/></Border></Grid>
@@ -103,7 +104,7 @@
           </StackPanel>
         </Border>
       </ScrollViewer>
-    </Grid>
+    </Grid></ScrollViewer>
     <Grid Grid.Row="2" Margin="0,18,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Moneda: pesos argentinos · Precios de ejemplo" Foreground="{DynamicResource Muted}" FontSize="11"/><TextBlock Grid.Column="1" Text="Impuesto del ejercicio: 18 %" Foreground="{DynamicResource Muted}" FontSize="11"/></Grid>
   </Grid>
     </TabItem>
