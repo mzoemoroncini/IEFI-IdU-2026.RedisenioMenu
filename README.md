@@ -119,7 +119,7 @@ Para demostrar la conservación histórica, guardar ese cierre y luego ir a Men�
 
 ## Decisiones de rediseño
 
-La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto. El panel lateral separa los resultados de las entradas. El botón terracota identifica Guardar cierre, la acción principal. El cálculo automático elimina una acción manual y da respuesta inmediata a cada cambio de cantidad. Se agregaron navegación por teclado, mensajes por campo, confirmación de limpieza, guardado, historial por día y vista previa de impresión. La navegación lateral separa la carga del cierre, la consulta del historial y la administración del menú. Los estados mantienen la misma distribución. La ventana utiliza controles de escritorio y la barra nativa de Windows.
+La tabla reúne el nombre, el precio, la cantidad y el importe de cada producto. El panel lateral separa los resultados de las entradas. El botón terracota identifica Guardar cierre, la acción principal. El cálculo automático elimina una acción manual y da respuesta inmediata a cada cambio de cantidad. Se agregaron navegación por teclado, mensajes por campo, confirmación de limpieza, guardado, historial por día y vista previa de impresión. La navegación lateral separa la carga del cierre, la consulta del historial y la administración del menú. En ventanas angostas, el resumen pasa debajo de los productos para mantener legibles sus nombres e importes. Los estados mantienen la misma distribución. La ventana utiliza controles de escritorio y la barra nativa de Windows.
 
 ## Validación de esta entrega
 

@@ -118,6 +118,10 @@ internal static class Program
             Check(((DataGrid)window.FindName("HistoryGrid")).Items.Count == 0 && ((TextBlock)window.FindName("EmptyHistory")).Text.Contains("Limpiar filtros"), "El historial explica una búsqueda sin coincidencias");
             from.SelectedDate = null; from.Text = ""; Pump();
             Check(((DataGrid)window.FindName("HistoryGrid")).Items.Count == 1 && ((Button)window.FindName("HistoryEditButton")).IsEnabled, "Al limpiar la fecha se recupera el cierre y su acción de editar");
+            from.SelectedDate = date.AddDays(5); Pump();
+            navigation.SelectedIndex = 0; Pump();
+            ((Button)window.FindName("ViewRegisteredDayButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
+            Check(navigation.SelectedIndex == 1 && from.SelectedDate is null && ((DataGrid)window.FindName("HistoryGrid")).Items.Count == 1, "Ver en historial abre el día solicitado aunque un filtro anterior lo ocultara");
             var help = new HelpWindow(1) { Owner = window }; help.Show(); Pump();
             Check(((TextBlock)help.FindName("Heading")).Text.Contains("cierres") && ((ItemsControl)help.FindName("Steps")).Items.Count > 0, "La ayuda muestra instrucciones de la sección consultada");
             help.Close();

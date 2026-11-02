@@ -257,8 +257,10 @@ public partial class MainWindow : Window
     {
         if (selectedClose is not { } saved) return;
         MainTabs.SelectedIndex = 1;
+        ClearHistoryFilters_Click(sender, e);
         HistoryGrid.SelectedItem = savedCloses.FirstOrDefault(row => row.Close.Summary.Date == saved.Summary.Date);
         if (HistoryGrid.SelectedItem is not null) HistoryGrid.ScrollIntoView(HistoryGrid.SelectedItem);
+        HistoryGrid.Focus();
     }
 
     private void EditRegisteredDay_Click(object sender, RoutedEventArgs e)
